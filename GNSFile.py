@@ -10,10 +10,11 @@ class GNSFile:
         storage = numpy.dtype({'names': ['index1', 'arrange', 'environment', 'resource_type',
                                          'resource_lba', 'resource_size'],
                                'formats': ['<H', '<B', '<B', '<H', '<I', '<I'],
-                               'offsets': [   0,    4,    5,    6,   10,   12],
+                               'offsets': [ 0x0,  0x2,  0x3,  0x4,  0x8,  0xc],
                                'itemsize': 20})
 
-        self._data = numpy.fromfile(file_name, storage)
+        self._data = numpy.fromfile(file_name, dtype=storage)
+        self.data = self._data.copy()
 
     @property
     def situations(self):
@@ -57,3 +58,9 @@ class GNSFile:
             return self._data[self._data['resource_type'] == RTYPE2]
         except AttributeError:
             print('Resource data not initialized.')
+
+
+if __name__ == "__main__":
+    import os
+    gns_file = GNSFile('C:\\Users\\DUDE\\PycharmProjects\\Ganesha-0.60\\FINALFANTASYTACTICS\\MAP\\MAP001.GNS')
+    print(gns_file.data)

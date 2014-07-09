@@ -1,74 +1,74 @@
 __author__ = 'DUDE'
 
-import os
 import sys
-import numpy
-from PyQt4 import QtCore, QtGui
+from MapFileTree import MapFileTree
+from PyQt4 import QtCore, QtGui, QtOpenGL
+from OpenGL.GL import *
+from OpenGL.arrays import vbo
 
+class GLWidget(QtOpenGL.QGLWidget):
+    def __init__(self, vertices, parent=None, size=QtCore.QSize(500, 500)):
+        super().__init__(parent, size=size)
+        self.vertices = vertices
+        self.program = None
 
-class GNSFile:
+    def initializeGL(self):
+        VERTEX_SHADER = '''
+        attribute vec3 vertex;
+        void main() {
+            gl_Position = gl_ModelViewProjectionMatrix * vec4(vertex, 1.0);
+        }'''
+        vs = QtOpenGL.QGLShader(QtOpenGL.QGLShader.Vertex, self)
+        vs.compileSourceCode(VERTEX_SHADER)
 
-    def __init__(self, file_name):
+        FRAGMENT_SHADER = '''
+        void main() {
+            gl_FragColor = vec4(1, 1, 1, 1);
+        }'''
+        fs = QtOpenGL.QGLShader(QtOpenGL.QGLShader.Fragment, self)
+        fs.compileSourceCode(FRAGMENT_SHADER)
 
-        storage = numpy.dtype({'names': ['index1', 'arrange', 'environment', 'resource_type',
-                                         'pad1', 'resource_lba', 'resource_size'],
-                               'formats': ['<H', '<B', '<B', '<H', 'H', '<I', '<I'],
-                               'itemsize': 20})
+        self.program = QtOpenGL.QGLShaderProgram(self)
+        self.program.addShader(vs)
+        self.program.addShader(fs)
+        self.program.link()
 
-        self._data = numpy.fromfile(file_name, storage)
+        self.vbo = vbo.VBO(self.vertices)
+        self.vertex_location = self.program.attributeLocation('vertex')
+        glEnable(GL_DEPTH_TEST)
+        glScale(1/256, 1/256, 1/256)
+        glClearColor(0.0, 0.0, 0.0, 1.0)
 
-    @property
-    def situations(self):
-        try:
-            #return index1, arrange, and temp1 limited to our resource data
-            return numpy.concatenate((self.texture_data,
-                                      self.type0_data,
-                                      self.type1_data,
-                                      self.type2_data))[['index1', 'arrange', 'environment']]
-        except AttributeError:
-            print('Data not initialized.')
+    def paintGL(self):
+        self.program.bind()
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    @property
-    def texture_data(self):
-        TEXTURE = 5889
-        try:
-            return self._data[self._data['resource_type'] == TEXTURE]
-        except AttributeError:
-            print('Texture data not initialized.')
+        with self.vbo:
+            glEnableVertexAttribArray(self.vertex_location)
+            glVertexAttribPointer(self.vertex_location,
+                                  4, GL_SHORT, False, 0, self.vbo)
+            glDrawArrays(GL_TRIANGLES, 0, 3 * len(self.vbo))
 
-    @property
-    def type0_data(self):
-        RTYPE0 = 11777
-        try:
-            return self._data[self._data['resource_type'] == RTYPE0]
-        except AttributeError:
-            print('Resource data not initialized.')
+        glDisableVertexAttribArray(self.vertex_location)
+        self.program.release()
 
-    @property
-    def type1_data(self):
-        RTYPE1 = 12033
-        try:
-            return self._data[self._data['resource_type'] == RTYPE1]
-        except AttributeError:
-            print('Resource data not initialized.')
-
-    @property
-    def type2_data(self):
-        RTYPE2 = 12289
-        try:
-            return self._data[self._data['resource_type'] == RTYPE2]
-        except AttributeError:
-            print('Resource data not initialized.')
-
+    def resizeGL(self, w, h):
+        self.width, self.height = w, h
+        glViewport(0, 0, w, h)
 
 class MapWindow(QtGui.QMainWindow):
 
     def __init__(self, parent=None):
+        from MeshFile import MeshFile
         super().__init__(parent)
         self.fh = QtGui.QFileDialog.getOpenFileName(parent=self,
                                                     caption='myGanesha',
-                                                    filter='FFT Map Files (*.gns)')
-        self.gns_file_tree = GNSFileTree(self.fh)
+                                                    filter='FFT Map Files (*.8)')
+        self.mesh = MeshFile(self.fh)
+        self.tri1 = self.mesh.texquads[['A', 'B', 'C']]
+        self.tri2 = self.mesh.texquads[['B', 'C', 'D']]
+        self.gl_widget = GLWidget(self.tri1, self)
+        self.setCentralWidget(self.gl_widget)
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

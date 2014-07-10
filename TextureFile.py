@@ -8,11 +8,12 @@ class TextureFile:
     def __init__(self, file_name):
         self._data = numpy.fromfile(file_name, dtype='B')
         #separate the data into left and right nibbles
-        self._lefts = self._data >> 4 & 15
+        self._lefts = self._data >> 4
         self._rights = self._data & 15
         #then interleave them into the full array
         self.full = numpy.dstack((self._lefts, self._rights)).flatten()
-        self.full.resize((256, 1024))
+        self.full.resize((1024, 256))
+        self.full = self.full.T
 
 if __name__ == "__main__":
     import pygame
@@ -23,6 +24,7 @@ if __name__ == "__main__":
     all_files = os.listdir()
     texture_files = [tex for tex in all_files if os.stat(tex).st_size == 131072]
     random_tex_file = random.choice(texture_files)
+#    random_tex_file = 'MAP001.8'
     texture_file = TextureFile(random_tex_file)
     #display it in greyscale
     pygame.init()

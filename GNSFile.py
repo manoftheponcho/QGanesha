@@ -4,6 +4,10 @@ import numpy
 
 
 class GNSFile:
+    TEXTURE = 5889
+    LARGE_R = 11777
+    MED_R = 12033
+    SMALL_R = 12289
 
     def __init__(self, file_name):
 
@@ -14,53 +18,47 @@ class GNSFile:
                                'itemsize': 20})
 
         self._data = numpy.fromfile(file_name, dtype=storage)
-        self.data = self._data.copy()
 
     @property
     def situations(self):
         try:
-            #return index1, arrange, and temp1 limited to our resource data
-            return numpy.concatenate((self.texture_data,
-                                      self.type0_data,
-                                      self.type1_data,
-                                      self.type2_data))[['index1', 'arrange', 'environment']]
+            #return index1, arrange, environment, and resource_type limited to our resource data
+            return self._data[self._data['resource_type'] <= GNSFile.SMALL_R][['index1',
+                                                                               'arrange',
+                                                                               'environment',
+                                                                               'resource_type']]
         except AttributeError:
             print('Data not initialized.')
 
     @property
     def texture_data(self):
-        TEXTURE = 5889
         try:
-            return self._data[self._data['resource_type'] == TEXTURE]
+            return self._data[self._data['resource_type'] == GNSFile.TEXTURE]
         except AttributeError:
             print('Texture data not initialized.')
 
     @property
     def type0_data(self):
-        RTYPE0 = 11777
         try:
-            return self._data[self._data['resource_type'] == RTYPE0]
+            return self._data[self._data['resource_type'] == GNSFile.LARGE_R]
         except AttributeError:
             print('Resource data not initialized.')
 
     @property
     def type1_data(self):
-        RTYPE1 = 12033
         try:
-            return self._data[self._data['resource_type'] == RTYPE1]
+            return self._data[self._data['resource_type'] == GNSFile.MED_R]
         except AttributeError:
             print('Resource data not initialized.')
 
     @property
     def type2_data(self):
-        RTYPE2 = 12289
         try:
-            return self._data[self._data['resource_type'] == RTYPE2]
+            return self._data[self._data['resource_type'] == GNSFile.SMALL_R]
         except AttributeError:
             print('Resource data not initialized.')
 
 
 if __name__ == "__main__":
-    import os
     gns_file = GNSFile('C:\\Users\\DUDE\\PycharmProjects\\Ganesha-0.60\\FINALFANTASYTACTICS\\MAP\\MAP001.GNS')
-    print(gns_file.data)
+    print(gns_file.situations)

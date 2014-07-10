@@ -12,32 +12,41 @@ class TextureFile:
         self._rights = self._data & 15
         #then interleave them into the full array
         self.full = numpy.dstack((self._lefts, self._rights)).flatten()
-        self.full.resize((1024, 256))
+        self.full.resize((256, 1024))
         self.full = self.full.T
 
 if __name__ == "__main__":
-    import pygame
     import random
     import os
+    import sys
+    from PyQt4 import QtCore, QtGui
     #find all texture files in the MAP directory and pick one at random
     os.chdir('C:\\Users\\DUDE\\PycharmProjects\\Ganesha-0.60\\FINALFANTASYTACTICS\\MAP\\')
     all_files = os.listdir()
     texture_files = [tex for tex in all_files if os.stat(tex).st_size == 131072]
     random_tex_file = random.choice(texture_files)
-#    random_tex_file = 'MAP001.8'
+    random_tex_file = 'MAP001.8'
     texture_file = TextureFile(random_tex_file)
-    #display it in greyscale
-    pygame.init()
-    screen = pygame.display.set_mode(texture_file.full.shape[:2])
-    #scale the palette index to 24-bit color (8 a piece)
-    scaled = texture_file.full.astype(numpy.uint32) * 16
-    #then copy that value to each of the red, green, and blue values
-    grey_scaled = scaled.reshape((texture_file.full.shape + (1,))).repeat(3, 2)
-    pygame.surfarray.blit_array(screen, grey_scaled)
-    pygame.display.flip()
-    done = False
-    while not done:
-        for e in pygame.event.get():
-            if e.type == pygame.KEYDOWN or e.type == pygame.QUIT:
-                done = True
-    pygame.quit()
+    #create an image and fill its color table with shades of grey
+    grey_scaled = QtGui.QImage(QtCore.QSize(1024, 256), QtGui.QImage.Format_Indexed8)
+    grey_scaled.setColorTable([QtGui.qRgb(i * 16, i * 16, i * 16) for i in range(16)])
+    for pos, color in numpy.ndenumerate(texture_file.full):
+        grey_scaled.setPixel(QtCore.QPoint(*pos), color)
+
+    class TestWidget(QtGui.QWidget):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+        def paintEvent(self, event):
+#            pixmap = QtGui.QPixmap.fromImage(grey_scaled)
+            painter = QtGui.QPainter(self)
+            painter.drawImage(self.rect(), grey_scaled)
+        def keyPressEvent(self, event):
+            if event.key() == QtCore.Qt.Key_Escape:
+                self.close()
+            else:
+                super().keyPressEvent(event)
+
+    app = QtGui.QApplication(sys.argv)
+    window = TestWidget()
+    window.show()
+    app.exec_()

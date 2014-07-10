@@ -1,7 +1,6 @@
 __author__ = 'DUDE'
 
 import os
-import numpy
 from GNSFile import GNSFile
 
 class MapFileTree:

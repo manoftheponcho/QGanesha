@@ -40,6 +40,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.program.addShader(fs)
         self.program.link()
 
+        self.bindTexture
         self.texvbo = vbo.VBO(self.texvertices)
         self.untexvbo = vbo.VBO(self.untexvertices)
         self.isTex_location = self.program.uniformLocation('isTex')
@@ -86,8 +87,16 @@ class MapWindow(QtGui.QMainWindow):
                                                     filter='FFT Map Files (*.9)')
         self.mesh = MeshFile(self.fh)
         self.textris = self.mesh.textris
+        self.textriuvs = zip(self.mesh.textriuvs[['A.u', 'B.u', 'C.u']],
+                             self.mesh.textriuvs[['A.v', 'B.v', 'C.v']])
+        self.textricolors = self.mesh.textriuvs['palette']
         self.texquads1 = self.mesh.texquads[['A', 'B', 'C']].astype(MeshFile.tri)
+        self.texquaduvs1 = zip(self.mesh.texquaduvs[['A.u', 'B.u', 'C.u']],
+                               self.mesh.texquaduvs[['A.v', 'B.v', 'C.v']])
         self.texquads2 = self.mesh.texquads[['B', 'C', 'D']].astype(MeshFile.tri)
+        self.texquaduvs2 = zip(self.mesh.texquaduvs[['B.u', 'C.u', 'D.u']],
+                               self.mesh.texquaduvs[['B.v', 'C.v', 'D.v']])
+        self.texquadcolors = self.mesh.texquaduvs['palette']
         self.untris = self.mesh.untris
         self.unquads1 = self.mesh.unquads[['A', 'B', 'C']].astype(MeshFile.tri)
         self.unquads2 = self.mesh.unquads[['B', 'C', 'D']].astype(MeshFile.tri)
@@ -96,8 +105,7 @@ class MapWindow(QtGui.QMainWindow):
                                                      self.texquads2)),
                                   numpy.concatenate((self.untris,
                                                      self.unquads1,
-                                                     self.unquads2)),
-                                  self)
+                                                     self.unquads2)))
         self.setCentralWidget(self.gl_widget)
 
     def keyPressEvent(self, *args, **kwargs):

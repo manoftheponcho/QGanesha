@@ -183,7 +183,7 @@ class MeshFile:
 
     @property
     def color_palettes(self):
-        """List of Color objects representing the color data in the file."""
+        """List of palettes representing the color data in the file."""
         if self.table_of_contents['palettes'] == 0:
             return None
         else:
@@ -193,9 +193,56 @@ class MeshFile:
                                          dtype=MeshFile.palette,
                                          offset=location,
                                          count=16)
-                return [MeshFile.Color(_data[0][x]) for x in range(16)]
+                return _data.tolist()
             except AttributeError:
                 print('Mesh data not initialized.')
+
+    @property
+    def textriuvs(self):
+        """numpy.array of texture coordinates for all textured triangles in the file."""
+        if self.table_of_contents['primary'] == 0:
+            return None
+        else:
+            location = (self.table_of_contents['primary'][0] +
+                        self.counts.size * MeshFile.header.itemsize +
+                        self.counts['textris'].size * MeshFile.tri.itemsize +
+                        self.counts['texquads'].size * MeshFile.quad.itemsize +
+                        self.counts['untris'].size * MeshFile.tri.itemsize +
+                        self.counts['unquads'].size * MeshFile.tri.itemsize +
+                        self.counts['textris'].size * MeshFile.tri.itemsize +
+                        self.counts['texquads'].size * MeshFile.quad.itemsize)
+            try:
+                return numpy.frombuffer(self._data,
+                                        dtype=MeshFile.triuv,
+                                        offset=location,
+                                        count=self.counts['textris'])
+            except AttributeError:
+                print('Mesh data not initialized.')
+
+    @property
+    def texquaduvs(self):
+        """numpy.array of texture coordinates for all textured quads in the file."""
+        if self.table_of_contents['primary'] == 0:
+            return None
+        else:
+            location = (self.table_of_contents['primary'][0] +
+                        self.counts.size * MeshFile.header.itemsize +
+                        self.counts['textris'].size * MeshFile.tri.itemsize +
+                        self.counts['texquads'].size * MeshFile.quad.itemsize +
+                        self.counts['untris'].size * MeshFile.tri.itemsize +
+                        self.counts['unquads'].size * MeshFile.tri.itemsize +
+                        self.counts['textris'].size * MeshFile.tri.itemsize +
+                        self.counts['texquads'].size * MeshFile.quad.itemsize +
+                        self.counts['textris'].size * MeshFile.triuv.itemsize)
+            try:
+                return numpy.frombuffer(self._data,
+                                        dtype=MeshFile.quaduv,
+                                        offset=location,
+                                        count=self.counts['texquads'])
+            except AttributeError:
+                print('Mesh data not initialized.')
+
+
 
 if __name__ == "__main__":
     import random

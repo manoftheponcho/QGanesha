@@ -45,7 +45,7 @@ if __name__ == "__main__":
             else:
                 super().keyPressEvent(event)
         def sizeHint(self):
-            return QtCore.QSize(256,1024)
+            return QtCore.QSize(256, 1024)
     app = QtGui.QApplication(sys.argv)
     window = TestWidget()
     window.show()

@@ -3,14 +3,24 @@ __author__ = 'DUDE'
 import os
 from GNSFile import GNSFile
 
+
 class MapFileTree:
-
-    def __init__(self, map_dir, map_name):
-        try:
-            self.gns_file = GNSFile(map_dir + map_name + '.GNS')
-        except FileNotFoundError:
-            self.gns_file = GNSFile(map_dir + map_name + '.gns')
-
+    """ Takes a map file and produces an interface consisting of
+    -a list of contexts, each itself consisting of
+        -the associated texture(s)
+        -a list of textured triangles and their texture coordinates, normals, palettes, and visibility info
+        -a list of textured quads    "                                                                    "
+        -a list of untextured triangles and their visibility info
+        -a list of untextured quads     "                       "
+    -the actual terrain info
+    -the background gradient
+    -all ambient and directional lighting
+    -animation instructions
+"""
+    def __init__(self, map_file):
+        map_dir, rel_name = os.path.split(map_file)
+        map_name = os.path.splitext(rel_name)[0]
+        self.gns_file = GNSFile(map_file)
         #find all mesh/texture files(files with the same base name but a different extension)
         self.resources = [res for res in os.listdir(map_dir)
                           if os.path.splitext(res)[0] == map_name and
@@ -53,8 +63,11 @@ class MapFileTree:
                                                             (sit[3] == situation[3])))])
 
 if __name__ == "__main__":
-    import random
-    current_map = MapFileTree('C:\\Users\DUDE\\PycharmProjects\\Ganesha-0.60\\FINALFANTASYTACTICS\\MAP\\',
-                              'MAP{:03}'.format(random.randint(1, 119)))
+    import sys
+    from PyQt4 import QtGui
+    app = QtGui.QApplication(sys.argv)
+    map_file = QtGui.QFileDialog.getOpenFileName(caption='QGanesha',
+                                                 filter='FFT Map Files (*.GNS)')
+    current_map = MapFileTree(map_file)
     print(current_map.items)
     print(current_map.get_files((34, 0, 128, 5889)))

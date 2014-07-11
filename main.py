@@ -83,7 +83,7 @@ class MapWindow(QtGui.QMainWindow):
         from MeshFile import MeshFile
         super().__init__(parent)
         self.fh = QtGui.QFileDialog.getOpenFileName(parent=self,
-                                                    caption='myGanesha',
+                                                    caption='QGanesha',
                                                     filter='FFT Map Files (*.9)')
         self.mesh = MeshFile(self.fh)
         self.textris = self.mesh.textris

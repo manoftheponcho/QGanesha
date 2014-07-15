@@ -37,12 +37,13 @@ class MeshFile:
 
     #texcoords are also a little weird
     triuv = numpy.dtype({'names': ['A.u', 'A.v', 'palette', 'B.u', 'B.v', 'page', 'C.u', 'C.v'],
-                         'formats': ['b', 'b', 'b', 'b', 'b', 'b', 'b', 'b'],
+                         'formats': ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'],
                          'offsets': [0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9],
                          'itemsize': 10})
     quaduv = numpy.dtype({'names': ['A.u', 'A.v', 'palette', 'B.u', 'B.v', 'page', 'C.u', 'C.v', 'D.u', 'D.v'],
-                          'formats': ['b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b', 'b'],
-                          'offsets': [0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9, 0xa, 0xb]})
+                          'formats': ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'],
+                          'offsets': [0x0, 0x1, 0x2, 0x4, 0x5, 0x6, 0x8, 0x9, 0xa, 0xb],
+                          'itemsize': 12})
 
     #primary mesh header contains 4 16-bit primitive counts
     header = numpy.dtype([('textris', '<H'), ('texquads', '<H'), ('untris', '<H'), ('unquads', '<H')])

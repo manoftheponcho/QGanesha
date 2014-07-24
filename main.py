@@ -7,10 +7,13 @@ from OpenGL.GL import *
 
 class GLWidget(QtOpenGL.QGLWidget):
     PROGRAM_VERTEX_ATTRIBUTE, PROGRAM_TEXCOORD_ATTRIBUTE = range(2)
-    def __init__(self, texvertices, untexvertices, texuvs, parent=None, size=QtCore.QSize(500, 500)):
-        super().__init__(parent, size=size)
-        self.texvertices = texvertices
-        self.untexvertices = untexvertices
+    def __init__(self, textris, texquads, untris, unquads, texuvs, parent=None):
+        super().__init__(parent)
+        self.textris = textris
+        self.texquads = texquads
+        self.texvertices = textris.tolist()
+        self.untexvertices = untris.tolist() + unquads.tolist()
+        print(self.untexvertices)
         self.tex_coords = texuvs
         self.tex_program = None
         self.untex_program = None
@@ -19,27 +22,29 @@ class GLWidget(QtOpenGL.QGLWidget):
         full_data = numpy.dstack((raw_data >> 4, raw_data & 15)).flatten()
         full_data.resize((1024, 256))
         self.tex_data = full_data.T
-        self.tex_image = QtGui.QImage(QtCore.QSize(256, 1024), QtGui.QImage.Format_Indexed8)
-        self.tex_image.setColorTable([QtGui.qRgb(i * 16, i * 16, i * 16) for i in range(16)])
+        self.tex_images = [QtGui.QImage(QtCore.QSize(256, 256), QtGui.QImage.Format_Indexed8)] * 4
+        for image in self.tex_images:
+            image.setColorTable([QtGui.qRgb(i * 16, i * 16, i * 16) for i in range(16)])
         for pos, color in numpy.ndenumerate(self.tex_data):
-            self.tex_image.setPixel(QtCore.QPoint(pos[0], pos[1]), color)
-        self.tex_pixmap = QtGui.QPixmap(self.tex_image)
+            self.tex_images[pos[1]//256].setPixel(QtCore.QPoint(pos[0], pos[1] % 256), color)
+        self.tex_pixmaps = [QtGui.QPixmap(image) for image in self.tex_images]
 
     def initializeGL(self):
-        self.texture_loc = self.bindTexture(self.tex_pixmap)
+        self.texture_loc = self.bindTexture(self.tex_pixmaps[0])
 
         glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
 
-        self.tex_program = QtOpenGL.QGLShaderProgram(self)
-        self.tex_program.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex, 'shader.vert')
-        self.tex_program.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment, 'shader.frag')
-        self.tex_program.link()
-        self.tex_program.bind()
-        self.tex_program.enableAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE)
-        self.tex_program.enableAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE)
-        self.tex_program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self.texvertices)
-        self.tex_program.setAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE, self.tex_coords)
-        self.tex_program.release()
+#        self.tex_program = QtOpenGL.QGLShaderProgram(self)
+#        self.tex_program.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex, 'shader.vert')
+#        self.tex_program.addShaderFromSourceFile(QtOpenGL.QGLShader.Fragment, 'shader.frag')
+#        self.tex_program.link()
+#        self.tex_program.bind()
+#        self.tex_program.enableAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE)
+#        self.tex_program.enableAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE)
+#        self.tex_program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self.textris)
+#        self.tex_program.setAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE, self.tex_coords)
+#        self.tex_program.release()
 
         self.untex_program = QtOpenGL.QGLShaderProgram(self)
         self.untex_program.addShaderFromSourceFile(QtOpenGL.QGLShader.Vertex, 'untexshader.vert')
@@ -55,22 +60,34 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        self.tex_program.bind()
-        glBindTexture(GL_TEXTURE_2D, self.texture_loc)
-        glDrawArrays(GL_TRIANGLES, 0, 3 * len(self.texvertices))
-        self.tex_program.release()
+#        self.tex_program.bind()
+#        glBindTexture(GL_TEXTURE_2D, self.texture_loc)
+#        glDrawArrays(GL_TRIANGLES, 0, 3 * len(self.textris))
+#        self.tex_program.release()
         self.untex_program.bind()
         glDrawArrays(GL_TRIANGLES, 0, 3 * len(self.untexvertices))
         self.untex_program.release()
 
     def resizeGL(self, w, h):
-        self.width, self.height = w, h
+        self.size = w, h
         glViewport(0, 0, w, h)
         self.updateGL()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.parent().close()
+        if event.key() == QtCore.Qt.Key_Up:
+            glRotate(5, 1, 0, 0)
+        elif event.key() == QtCore.Qt.Key_Down:
+            glRotate(-5, 1, 0, 0)
+        if event.key() == QtCore.Qt.Key_Left:
+            glRotate(5, 0, 1, 0)
+        elif event.key() == QtCore.Qt.Key_Right:
+            glRotate(-5, 0, 1, 0)
+        self.updateGL()
+
+    def sizeHint(self):
+        return QtCore.QSize(512, 512)
 
 class MapWindow(QtGui.QMainWindow):
 
@@ -85,24 +102,32 @@ class MapWindow(QtGui.QMainWindow):
         self.textris = numpy.concatenate((self.mesh.textris['A'],
                                           self.mesh.textris['B'],
                                           self.mesh.textris['C']))
-        self.textriuvs = (self.mesh.textriuvs[['A.u', 'A.v']].tolist() +
-                          self.mesh.textriuvs[['B.u', 'B.v']].tolist() +
-                          self.mesh.textriuvs[['C.u', 'C.v']].tolist())
+        self.textriuvs = (self.mesh.textriuvs[['A.u', 'A.v', 'page']].tolist() +
+                          self.mesh.textriuvs[['B.u', 'B.v', 'page']].tolist() +
+                          self.mesh.textriuvs[['C.u', 'C.v', 'page']].tolist())
         self.textricolors = self.mesh.textriuvs['palette']
-        self.texquads1 = self.mesh.texquads[['A', 'B', 'C']].astype(MeshFile.tri)
+        self.texquads = numpy.concatenate((self.mesh.texquads['A'],
+                                           self.mesh.texquads['B'],
+                                           self.mesh.texquads['C'],
+                                           self.mesh.texquads['B'],
+                                           self.mesh.texquads['C'],
+                                           self.mesh.texquads['D']))
         self.texquaduvs1 = (self.mesh.texquaduvs[['A.u', 'A.v']].tolist() +
                             self.mesh.texquaduvs[['B.u', 'B.v']].tolist() +
                             self.mesh.texquaduvs[['C.u', 'C.v']].tolist())
-        self.texquads2 = self.mesh.texquads[['B', 'C', 'D']].astype(MeshFile.tri)
-        self.texquaduvs2 = list(zip(self.mesh.texquaduvs[['B.u', 'C.u', 'D.u']],
-                                    self.mesh.texquaduvs[['B.v', 'C.v', 'D.v']]))
         self.texquadcolors = self.mesh.texquaduvs['palette']
         self.untris = numpy.concatenate((self.mesh.untris['A'],
                                          self.mesh.untris['B'],
                                          self.mesh.untris['C']))
+        self.unquads = numpy.concatenate((self.mesh.unquads['A'],
+                                          self.mesh.unquads['B'],
+                                          self.mesh.unquads['C'],
+                                          self.mesh.unquads['B'],
+                                          self.mesh.unquads['C'],
+                                          self.mesh.unquads['D']))
         self.unquads1 = self.mesh.unquads[['A', 'B', 'C']].astype(MeshFile.tri)
         self.unquads2 = self.mesh.unquads[['B', 'C', 'D']].astype(MeshFile.tri)
-        self.gl_widget = GLWidget(self.textris, self.untris, self.textriuvs)
+        self.gl_widget = GLWidget(self.textris, self.texquads, self.untris, self.unquads, self.textriuvs)
         self.setCentralWidget(self.gl_widget)
 
     def keyPressEvent(self, *args, **kwargs):

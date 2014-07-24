@@ -29,10 +29,20 @@ class MeshFile:
 
     #mesh file header is big and ugly
     toc = numpy.dtype({'names': ['primary', 'palettes', 'lights', 'terrain',
-                                 'tex_anis', 'pal_anis', 'tex_palettes', 'ani_commands', 'ani_meshes',
+                                 'tex_anis', 'pal_anis', 'tex_palettes', 'ani_commands',
+                                 'ani_mesh1', 'ani_mesh2', 'ani_mesh3', 'ani_mesh4',
+                                 'ani_mesh5', 'ani_mesh6', 'ani_mesh7', 'ani_mesh8',
                                  'vis_angles'],
-                       'formats': ['<u4', '<u4', '<u4', '<u4', '<u4', '<u4', '<u4', '<u4', '<8u4', '<u4'],
-                       'offsets': [0x40,   0x44,  0x64,  0x68,  0x6c,  0x70,  0x7c,  0x8c,   0x90,  0xb0],
+                       'formats': ['<u4', '<u4', '<u4', '<u4',
+                                   '<u4', '<u4', '<u4', '<u4',
+                                   '<u4', '<u4', '<u4', '<u4',
+                                   '<u4', '<u4', '<u4', '<u4',
+                                   '<u4'],
+                       'offsets': [0x40,  0x44,  0x64,  0x68,
+                                   0x6c,  0x70,  0x7c,  0x8c,
+                                   0x90,  0x94,  0x98,  0x9c,
+                                   0xa0,  0xa4,  0xa8,  0xac,
+                                   0xb0],
                        'itemsize': 196})
 
     #texcoords are also a little weird
@@ -78,7 +88,7 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * self.header.itemsize)
+                        MeshFile.header.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.tri,
@@ -94,8 +104,8 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.quad,
@@ -111,9 +121,9 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.tri,
@@ -129,10 +139,10 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['untris'].size * MeshFile.tri.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['untris'][0] * MeshFile.tri.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.quad,
@@ -148,11 +158,11 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['untris'].size * MeshFile.tri.itemsize +
-                        self.counts['unquads'].size * MeshFile.tri.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['untris'][0] * MeshFile.tri.itemsize +
+                        self.counts['unquads'][0] * MeshFile.quad.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.tri,
@@ -168,12 +178,12 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['untris'].size * MeshFile.tri.itemsize +
-                        self.counts['unquads'].size * MeshFile.tri.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['untris'][0] * MeshFile.tri.itemsize +
+                        self.counts['unquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.quad,
@@ -205,13 +215,13 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['untris'].size * MeshFile.tri.itemsize +
-                        self.counts['unquads'].size * MeshFile.tri.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['untris'][0] * MeshFile.tri.itemsize +
+                        self.counts['unquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.triuv,
@@ -227,14 +237,14 @@ class MeshFile:
             return None
         else:
             location = (self.table_of_contents['primary'][0] +
-                        self.counts.size * MeshFile.header.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['untris'].size * MeshFile.tri.itemsize +
-                        self.counts['unquads'].size * MeshFile.tri.itemsize +
-                        self.counts['textris'].size * MeshFile.tri.itemsize +
-                        self.counts['texquads'].size * MeshFile.quad.itemsize +
-                        self.counts['textris'].size * MeshFile.triuv.itemsize)
+                        MeshFile.header.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['untris'][0] * MeshFile.tri.itemsize +
+                        self.counts['unquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['textris'][0] * MeshFile.tri.itemsize +
+                        self.counts['texquads'][0] * MeshFile.quad.itemsize +
+                        self.counts['textris'][0] * MeshFile.triuv.itemsize)
             try:
                 return numpy.frombuffer(self._data,
                                         dtype=MeshFile.quaduv,
@@ -256,7 +266,6 @@ if __name__ == "__main__":
     done = False
     while not done:
         random_mesh_file = random.choice(mesh_files)
-        mesh_file = MeshFile(random_mesh_file)
-        if mesh_file.table_of_contents['palettes'] != 0:
-            print(mesh_file.color_palettes)
-            done = True
+        mesh_file = MeshFile('MAP001.9')
+        done = True
+    print(list(zip(mesh_file.textris, mesh_file.textriuvs)))

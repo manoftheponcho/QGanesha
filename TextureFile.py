@@ -22,10 +22,9 @@ if __name__ == "__main__":
     from PyQt4 import QtCore, QtGui
     #find all texture files in the MAP directory and pick one at random
     os.chdir('C:\\Users\\DUDE\\PycharmProjects\\Ganesha-0.60\\FINALFANTASYTACTICS\\MAP\\')
-    all_files = os.listdir()
+    all_files = os.listdir('.')
     texture_files = [tex for tex in all_files if os.stat(tex).st_size == 131072]
     random_tex_file = random.choice(texture_files)
-    random_tex_file = 'MAP001.8'
     texture_file = TextureFile(random_tex_file)
     #create an image and fill its color table with shades of grey
     grey_scaled = QtGui.QImage(QtCore.QSize(256, 1024), QtGui.QImage.Format_Indexed8)
@@ -41,12 +40,13 @@ if __name__ == "__main__":
             painter.drawImage(self.rect(), grey_scaled)
         def keyPressEvent(self, event):
             if event.key() == QtCore.Qt.Key_Escape:
-                self.close()
+                sys.exit(0)
             else:
                 super().keyPressEvent(event)
         def sizeHint(self):
             return QtCore.QSize(256, 1024)
     app = QtGui.QApplication(sys.argv)
     window = TestWidget()
+    window.setWindowTitle(random_tex_file)
     window.show()
     app.exec_()
